@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * The name of the session where the nids of the view are saved 
+ */
+define ('NIS_PAGINATION', 'nids_pagination');
+
+/**
+ * Implements hook_views_pre_render(). 
+ */
+function views_node_pagination_views_pre_render(&$view) {
+  $query = $view->build_info['query'];
+  if (is_numeric($view->total_rows)) {
+    $query->range(0, $view->total_rows);
+  }
+  $result = $query->execute();
+  
+  $nids_pagination = array();
+  foreach ($result as $row) {
+    $nids_pagination[] = $row->nid;
+  }
+  $_SESSION[NIS_PAGINATION] = $nids_pagination; 
+}
+
+/**
+ * Implements hook_node_view(). 
+ */
+function views_node_pagination_node_view($node, $view_mode) {
+
+  $navigation = views_node_pagination_node_view_get_navigation($node);
+  
+  $next = $navigation['next'];
+  $previous = $navigation['previous'];
+  
+  if ($next >=0 || $previous >= 0) {
+    
+    $links = $node->content['links']['pagination'] = array(
+        '#links' => array(
+            array(
+                'title' => t('Previous'),
+                'href' => 'node/' . $previous,
+            ),
+            array(
+                'title' => t('Next'),
+                'href' => 'node/' . $next,
+            )
+        ),
+    );
+    
+    return $links;
+  }
+   
+}
+
+/**
+ * Returns an array with the previous or next nid in regards to the current node
+ */
+function views_node_pagination_node_view_get_navigation($node) {
+  $nids_pagination = $_SESSION[NIS_PAGINATION];
+  
+  $index = array_search($node->nid, $nids_pagination);
+  
+  $next = -1;
+  $previous = -1;
+  
+  $response = array('previous' => -1, 'next' => -1);
+  
+  if ($index !== FALSE) {
+  
+    $length = count($nids_pagination);
+  
+    if ($index + 1 >= $length) {
+      $next = $nids_pagination[0];
+    }
+    else {
+      $next = $nids_pagination[$index + 1];
+    }
+  
+    if ($index - 1 < 0) {
+      $previous = $nids_pagination[$length-1];
+    }
+    else {
+      $previous = $nids_pagination[$index - 1];
+    }
+    
+    $response['previous'] = $previous;
+    $response['next'] = $next;
+  }
+  
+  return $response;
+}

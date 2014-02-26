@@ -1,0 +1,7 @@
+name = Views Node Pagination
+description = This module creates a navigation links previous and next regarding a node that belongs an a view
+package = Views
+dependencies[] = views
+files[] = views_ui.module
+core = 7.x
+version = 1.0
